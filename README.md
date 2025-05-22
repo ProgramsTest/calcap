@@ -5,9 +5,8 @@ This is a simple web application that calculates the **ultimate** and **allowabl
 ## 🔗 Live Demo
 
 You can try the app online here:  
-👉 [https://yourusername.github.io/meyerhof-calculator](https://yourusername.github.io/meyerhof-calculator)
+👉 [https://yourusername.github.io/meyerhof-calculator](https://yourusername.github.io/calcap)
 
-*(Replace the URL with your GitHub Pages link after deployment)*
 
 ---
 
