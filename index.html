@@ -1,48 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Meyerhof Capacity Calculator</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Capacidad Portante</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Meyerhof Capacity Calculator</h1>
+    <div class="container">
+        <!-- Sección de Datos de Estratos -->
+        <div class="section">
+            <div class="section-header">Datos de Estratos</div>
+            
+            <div class="input-group">
+                <label>Numero de Estratos</label>
+                <input type="number" id="numEstratos" value="4" min="1" max="10" onchange="updateEstratoTable()">
+            </div>
 
-    <form id="inputForm">
-      <fieldset>
-        <legend>Foundation Parameters</legend>
-        <label>Width (B) [m]: <input type="number" step="0.1" id="width" required></label>
-        <label>Length (L) [m]: <input type="number" step="0.1" id="length" required></label>
-        <label>Depth (Df) [m]: <input type="number" step="0.1" id="depth" required></label>
-        <label>Load Inclination (β) [°]: <input type="number" step="0.1" id="beta" required></label>
-        <label>Water Table Depth (Nfreatico) [m]: <input type="number" step="0.1" id="nfreatico" required></label>
-      </fieldset>
+            <div class="table-container">
+                <table id="estratosTable">
+                    <thead>
+                        <tr>
+                            <th>Cota</th>
+                            <th>Peso Esp.</th>
+                            <th>Peso Sat.</th>
+                            <th>Ang. Friccion</th>
+                            <th>Cohesion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="estratosBody">
+                        <!-- Rows will be generated dynamically -->
+                    </tbody>
+                </table>
+            </div>
 
-      <fieldset>
-        <legend>Soil Stratigraphy</legend>
-        <textarea id="soilData" rows="5" required>
-[
-  [0.8, 1.8, 1.8, 22, 0],
-  [1.4, 1.8, 1.8, 22, 0],
-  [8.0, 1.8, 1.8, 22, 0]
-]
-        </textarea>
-        <small>Format: [depth, γ, γ_sat, φ, c]</small>
-      </fieldset>
+            <div class="input-group">
+                <label>Cota Nivel Freatico</label>
+                <input type="number" id="cotaNivelFreatico" value="7" step="0.1">
+            </div>
+        </div>
 
-      <button type="submit">Calculate</button>
-    </form>
+        <!-- Botón PROCESA -->
+        <div class="process-button-container">
+            <button id="procesaBtn" class="process-button">PROCESA</button>
+        </div>
 
-    <div id="results">
-      <h2>Results</h2>
-      <p><strong>Ultimate Bearing Capacity (qu):</strong> <span id="qu">-</span> kPa</p>
-      <p><strong>Allowable Bearing Capacity (qa):</strong> <span id="qa">-</span> kPa</p>
+        <!-- Sección de Dimensiones Zapata Cuadrada -->
+        <div class="section">
+            <div class="section-header">Dimensiones Zapata Cuadrada</div>
+            
+            <div class="dimensions-table">
+                <table id="dimensionsTable">
+                    <thead>
+                        <tr>
+                            <th class="df-header">Df</th>
+                            <th>Label</th>
+                            <th>Label2</th>
+                            <th>Label3</th>
+                            <th>Label4</th>
+                            <th>Label5</th>
+                            <th>Label6</th>
+                            <th>Label7</th>
+                            <th>Label8</th>
+                            <th>Label9</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dimensionsBody">
+                        <tr><td class="df-label">Label10</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label11</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label12</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label13</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label14</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label15</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label16</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label17</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td class="df-label">Label18</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección de Parámetros -->
+        <div class="parameters-section">
+            <div class="param-group">
+                <div class="param-header">Inclinacion Carga</div>
+                <div class="input-group">
+                    <label>Beta</label>
+                    <input type="number" id="beta" value="0" step="0.1">
+                </div>
+            </div>
+
+            <div class="param-group">
+                <div class="param-header">Geometria Zapata/Deplante</div>
+                <div class="input-group">
+                    <label>Dim menor zapata</label>
+                    <input type="number" id="dimMenorZapata" value="2.2" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Incremento (L/B)</label>
+                    <input type="number" id="incrementoLB" value="1" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Profundidad Menor Df</label>
+                    <input type="number" id="profundidadMenorDf" value="1.5" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Incremento Df</label>
+                    <input type="number" id="incrementoDf" value="0.5" step="0.1">
+                </div>
+            </div>
+
+            <div class="param-group">
+                <div class="param-header">Parametros Salida</div>
+                <div class="input-group">
+                    <label>Formula a Emplear</label>
+                    <select id="formulaEmplear">
+                        <option value="meyerhof">Meyerhof </option>
+                        <option value="arpl2" selected>ARPL2</option>
+                        <option value="arpl">ARPL</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Unidades Resultados</label>
+                    <select id="unidadesResultados">
+                        <option value="tn/m2" selected>Tn/m2</option>
+                        <option value="kg/cm2">Kg/cm2</option>
+                        <option value="kpa">KPa</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Resultados -->
+        <div class="results-section">
+            <div class="note">
+                Nota: Los Resultados Capacidad Admisible se encuentran segun el valor asignado en "Unidades Resultados"
+            </div>
+            
+            <div class="author">
+                Propiedad: GNU
+            </div>
+
+            <div class="results-table">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th class="verification-header">Verificacion</th>
+                            <th>Largo (m)</th>
+                            <th>Ancho (m)</th>
+                            <th>Df(m)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr><td class="verification-label">Nc</td><td>Fcs</td><td>Fcd</td><td>Fci</td></tr>
+                        <tr><td class="verification-label">Nq</td><td>Fqs</td><td>Fqd</td><td>Fqi</td></tr>
+                        <tr><td class="verification-label">NY</td><td>FYs</td><td>FYd</td><td>FYi</td></tr>
+                        <tr><td class="verification-label">Qu</td><td>Tn/m2</td><td></td><td></td></tr>
+                        <tr><td class="verification-label">Qa</td><td>Tn/m2</td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script src="pyodide_runner.js"></script>
-  <script src="script.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
 </html>
