@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meyerhof Capacity Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Meyerhof Capacity Calculator</h1>
+
+    <form id="inputForm">
+      <fieldset>
+        <legend>Foundation Parameters</legend>
+        <label>Width (B) [m]: <input type="number" step="0.1" id="width" required></label>
+        <label>Length (L) [m]: <input type="number" step="0.1" id="length" required></label>
+        <label>Depth (Df) [m]: <input type="number" step="0.1" id="depth" required></label>
+        <label>Load Inclination (β) [°]: <input type="number" step="0.1" id="beta" required></label>
+        <label>Water Table Depth (Nfreatico) [m]: <input type="number" step="0.1" id="nfreatico" required></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Soil Stratigraphy</legend>
+        <textarea id="soilData" rows="5" required>
+[
+  [0.8, 1.8, 1.8, 22, 0],
+  [1.4, 1.8, 1.8, 22, 0],
+  [8.0, 1.8, 1.8, 22, 0]
+]
+        </textarea>
+        <small>Format: [depth, γ, γ_sat, φ, c]</small>
+      </fieldset>
+
+      <button type="submit">Calculate</button>
+    </form>
+
+    <div id="results">
+      <h2>Results</h2>
+      <p><strong>Ultimate Bearing Capacity (qu):</strong> <span id="qu">-</span> kPa</p>
+      <p><strong>Allowable Bearing Capacity (qa):</strong> <span id="qa">-</span> kPa</p>
+    </div>
+  </div>
+
+  <script src="pyodide_runner.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
