@@ -1,86 +1,351 @@
-/* Reset some default browser styling */
+/* styles.css - Estilos para la Calculadora de Capacidad Portante */
+
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-  background-color: #f4f6f8;
-  color: #333;
-  line-height: 1.6;
-  padding: 20px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    background-color: #f0f0f0;
+    padding: 10px;
 }
 
 .container {
-  max-width: 800px;
-  background: white;
-  margin: auto;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-h1, h2 {
-  margin-bottom: 20px;
-  color: #005fa3;
+/* Sección de Datos de Estratos */
+.section {
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 5px;
 }
 
-form {
-  margin-bottom: 30px;
+.section-header {
+    background: #ff6633;
+    color: white;
+    padding: 8px;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 3px 3px 0 0;
 }
 
-fieldset {
-  border: 1px solid #ddd;
-  padding: 15px;
-  margin-bottom: 20px;
-  border-radius: 8px;
+.input-group {
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-legend {
-  font-weight: bold;
-  padding: 0 10px;
+.input-group label {
+    min-width: 120px;
+    font-weight: bold;
 }
 
-label {
-  display: block;
-  margin-bottom: 10px;
+.input-group input,
+.input-group select {
+    flex: 1;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
 }
 
-input, textarea {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+/* Tabla de Estratos */
+.table-container {
+    padding: 8px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-textarea {
-  font-family: monospace;
+#estratosTable {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
 }
 
-button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
+#estratosTable th {
+    background: #4a90e2;
+    color: white;
+    padding: 6px;
+    text-align: center;
+    font-size: 11px;
+    border: 1px solid #ccc;
 }
 
-button:hover {
-  background-color: #005fa3;
+#estratosTable td {
+    padding: 4px;
+    border: 1px solid #ccc;
+    text-align: center;
 }
 
-#results {
-  background: #f0f8ff;
-  padding: 15px;
-  border-radius: 8px;
-  border-left: 5px solid #007bff;
+#estratosTable input {
+    width: 100%;
+    border: none;
+    padding: 2px;
+    text-align: center;
+    background: transparent;
 }
 
-#results p {
-  margin-bottom: 10px;
+/* Botón PROCESA */
+.process-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.process-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.process-button:hover {
+    background: #c82333;
+}
+
+.process-button:active {
+    transform: translateY(1px);
+}
+
+/* Sección de Dimensiones */
+.dimensions-table {
+    padding: 8px;
+}
+
+#dimensionsTable {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+}
+
+#dimensionsTable th {
+    background: #4a90e2;
+    color: white;
+    padding: 6px;
+    text-align: center;
+    font-size: 11px;
+    border: 1px solid #ccc;
+}
+
+.df-header {
+    background: #ff6633 !important;
+}
+
+#dimensionsTable td {
+    padding: 6px;
+    border: 1px solid #ccc;
+    text-align: center;
+    min-width: 80px;
+    height: 25px;
+}
+
+.df-label {
+    background: #4a90e2;
+    color: white;
+    font-weight: bold;
+}
+
+/* Sección de Parámetros */
+.parameters-section {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.param-group {
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+.param-header {
+    background: #ff6633;
+    color: white;
+    padding: 6px;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 3px 3px 0 0;
+    font-size: 11px;
+}
+
+/* Sección de Resultados */
+.results-section {
+    grid-column: 3;
+    grid-row: 2;
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+.note {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    border-radius: 3px;
+}
+
+.author {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 15px;
+    font-size: 11px;
+}
+
+.results-table {
+    overflow-x: auto;
+}
+
+#resultsTable {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+}
+
+#resultsTable th {
+    background: #4a90e2;
+    color: white;
+    padding: 6px;
+    text-align: center;
+    font-size: 11px;
+    border: 1px solid #ccc;
+}
+
+.verification-header {
+    background: #ff6633 !important;
+}
+
+#resultsTable td {
+    padding: 6px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-size: 11px;
+}
+
+.verification-label {
+    background: #4a90e2;
+    color: white;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+    }
+    
+    .parameters-section {
+        grid-column: 1;
+        grid-row: 3;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .results-section {
+        grid-column: 1;
+        grid-row: 4;
+    }
+    
+    .param-group {
+        flex: 1;
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 800px) {
+    .parameters-section {
+        flex-direction: column;
+    }
+    
+    .param-group {
+        min-width: auto;
+    }
+    
+    body {
+        font-size: 11px;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .input-group label {
+        min-width: auto;
+        margin-bottom: 4px;
+    }
+}
+
+/* Scrollbars personalizados */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Animaciones */
+.section, .param-group {
+    transition: box-shadow 0.3s ease;
+}
+
+.section:hover, .param-group:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Estados de carga */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ccc;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
