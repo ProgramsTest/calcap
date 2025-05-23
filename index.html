@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Capacidad Portante</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
@@ -52,6 +52,23 @@
             <div class="dimensions-table">
                 <table id="dimensionsTable">
                     <thead>
+                        <tr id="tableHeader">
+                            <!-- Headers will be injected here -->
+                        </tr>
+                    </thead>
+                    <tbody id="dimensionsBody">
+                        <!-- Body rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- <div class="section">
+            <div class="section-header">Dimensiones Zapata Cuadrada</div>
+            
+            <div class="dimensions-table">
+                <table id="dimensionsTable">
+                    <thead>
                         <tr>
                             <th class="df-header">Df</th>
                             <th>Label</th>
@@ -78,7 +95,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div> -->
 
         <!-- Sección de Parámetros -->
         <div class="parameters-section">
@@ -93,16 +110,28 @@
             <div class="param-group">
                 <div class="param-header">Geometria Zapata/Deplante</div>
                 <div class="input-group">
-                    <label>Dim menor zapata</label>
-                    <input type="number" id="dimMenorZapata" value="2.2" step="0.1">
+                    <label>Valor de L</label>
+                    <input type="number" id="L" value="1" step="0.1">
                 </div>
                 <div class="input-group">
-                    <label>Incremento (L/B)</label>
-                    <input type="number" id="incrementoLB" value="1" step="0.1">
+                    <label>B minimo</label>
+                    <input type="number" id="Bmin" value="1" step="0.1">
                 </div>
                 <div class="input-group">
-                    <label>Profundidad Menor Df</label>
-                    <input type="number" id="profundidadMenorDf" value="1.5" step="0.1">
+                    <label>B maximo</label>
+                    <input type="number" id="Bmax" value="1" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Incremento B</label>
+                    <input type="number" id="dB" value="2.2" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Profundidad Inicial Df</label>
+                    <input type="number" id="DFmin" value="1.5" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label>Profundidad Final Df</label>
+                    <input type="number" id="DFmax" value="1.5" step="0.1">
                 </div>
                 <div class="input-group">
                     <label>Incremento Df</label>
@@ -115,8 +144,8 @@
                 <div class="input-group">
                     <label>Formula a Emplear</label>
                     <select id="formulaEmplear">
-                        <option value="meyerhof">Meyerhof </option>
-                        <option value="arpl2" selected>ARPL2</option>
+                        <option value="meyerhof" selected>Meyerhof </option>
+                        <option value="arpl2">ARPL2</option>
                         <option value="arpl">ARPL</option>
                     </select>
                 </div>
@@ -138,7 +167,7 @@
             </div>
             
             <div class="author">
-                Propiedad: Kelly Melissa Huaman Carpio
+                Propiedad: GNU
             </div>
 
             <div class="results-table">
