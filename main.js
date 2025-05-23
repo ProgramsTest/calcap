@@ -92,26 +92,30 @@ class BearingCapacityCalculator {
     }
 
     getParametros() {
+
         return {
-            nfreatico: parseFloat(document.getElementById('cotaNivelFreatico').value),
+            Nfreatico: parseFloat(document.getElementById('cotaNivelFreatico').value),
             beta: parseFloat(document.getElementById('beta').value),
-            dimMenorZapata: parseFloat(document.getElementById('dimMenorZapata').value),
-            incrementoLB: parseFloat(document.getElementById('incrementoLB').value),
-            profundidadMenorDf: parseFloat(document.getElementById('profundidadMenorDf').value),
-            incrementoDf: parseFloat(document.getElementById('incrementoDf').value),
+            L: parseFloat(document.getElementById('L').value),
+            B_min: parseFloat(document.getElementById('Bmin').value),
+            B_max: parseFloat(document.getElementById('Bmax').value),
+            dB: parseFloat(document.getElementById('dB').value),
+            DF_min: parseFloat(document.getElementById('DFmin').value),
+            DF_max: parseFloat(document.getElementById('DFmax').value),
+            dF: parseFloat(document.getElementById('incrementoDf').value),
             formula: document.getElementById('formulaEmplear').value,
             unidades: document.getElementById('unidadesResultados').value
         };
     }
 
-    generarDimensiones(params) {
-        // Generar arrays de dimensiones basados en los parámetros
-        const df = [params.profundidadMenorDf]; // Por ahora solo una profundidad
-        const b = [params.dimMenorZapata]; // Ancho de zapata
-        const l = [params.dimMenorZapata * params.incrementoLB]; // Largo = ancho * incremento
+    // generarDimensiones(params) {
+    //     // Generar arrays de dimensiones basados en los parámetros
+    //     const df = [params.profundidadMenorDf]; // Por ahora solo una profundidad
+    //     const b = [params.dimMenorZapata]; // Ancho de zapata
+    //     const l = [params.dimMenorZapata * params.incrementoLB]; // Largo = ancho * incremento
 
-        return { df, l, b };
-    }
+    //     return { df, l, b };
+    // }
 
     async procesarCalculo() {
         try {
@@ -123,24 +127,32 @@ class BearingCapacityCalculator {
             // Obtener datos de entrada
             const datosEstratos = this.getDatosEstratos();
             const params = this.getParametros();
-            const { df, l, b } = this.generarDimensiones(params);
+            
+            // const { df, l, b } = this.generarDimensiones(params);
 
             console.log('Datos de entrada:', {
                 datosEstratos,
-                nfreatico: params.nfreatico,
+                nfreatico: params.Nfreatico,
                 beta: params.beta,
-                df, l, b,
+                // df, l, b,
                 formula: params.formula
             });
 
-            // Realizar cálculo
+            // Realizar cálculo 
             const result = this.calculate(
                 params.formula,
                 datosEstratos,
-                params.nfreatico,
-                params.beta,
-                df, l, b
+                params.B_min,
+                params.B_max,
+                params.dB,
+                params.L,
+                params.DF_min,
+                params.DF_max,
+                params.dF,
+                params.Nfreatico,
+                params.beta
             );
+
 
             // Mostrar resultados
             this.mostrarResultados(result, params);
@@ -156,29 +168,30 @@ class BearingCapacityCalculator {
         }
     }
 
-    calculate(method, datosEstratos, nfreatico, beta, df, l, b) {
+    calculate(method, datosEstratos, B_min, B_max, dB, L, DF_min, DF_max, dF, Nfreatico, beta) {
         const MethodClass = this.availableMethods[method.toLowerCase()];
         
         if (!MethodClass) {
             throw new Error(`Método '${method}' no disponible. Métodos disponibles: ${Object.keys(this.availableMethods).join(', ')}`);
         }
 
-        return new MethodClass(datosEstratos, nfreatico, beta, df, l, b);
+        return new MethodClass(datosEstratos, B_min, B_max, dB, L, DF_min, DF_max, dF, Nfreatico, beta);
     }
 
     mostrarResultados(result, params) {
         // Obtener resultados
+        const {Qu, Qa, Nq, Nc, Ng, Fcs, Fqs, Fgs, Fcd, Fqd, Fgd, Fci, Fqi, Fgi, DF_data, B_data} = result.getResults();
+        console.log("QU", Qu, DF_data, B_data);
+    
         const qu = result.getQuResultados ? result.getQuResultados() : result.resultados_qu;
         const qa = result.getQaResultados ? result.getQaResultados() : result.resultados_qa;
-        
+    
         console.log('Resultados obtenidos:', { qu, qa });
-
+    
         // Actualizar tabla de resultados
         const tbody = document.getElementById('resultsBody');
-        
-        // Limpiar contenido previo
-        tbody.innerHTML = '';
-
+        tbody.innerHTML = ''; // Limpiar contenido previo
+    
         // Obtener factores si están disponibles
         let factores = {};
         if (result.getNc) {
@@ -186,7 +199,7 @@ class BearingCapacityCalculator {
             factores.nq = result.getNq();
             factores.ng = result.getNg();
         }
-
+    
         // Crear filas de resultados
         const rows = [
             { label: 'Nc', values: factores.nc || [['-']], unit: '' },
@@ -195,38 +208,88 @@ class BearingCapacityCalculator {
             { label: 'Qu', values: qu, unit: this.getUnidadDisplay(params.unidades) },
             { label: 'Qa', values: qa, unit: this.getUnidadDisplay(params.unidades) }
         ];
-
-        rows.forEach(row => {
-            const tr = document.createElement('tr');
-            const labelCell = document.createElement('td');
-            labelCell.className = 'verification-label';
-            labelCell.textContent = row.label;
-            tr.appendChild(labelCell);
-
-            // Mostrar valores (asumiendo matriz 1x1 por simplicidad)
-            const value = Array.isArray(row.values) && Array.isArray(row.values[0]) 
-                ? row.values[0][0] 
-                : row.values;
-            
-            const valueCell = document.createElement('td');
-            valueCell.textContent = typeof value === 'number' ? value.toFixed(2) : value;
-            tr.appendChild(valueCell);
-
-            const unitCell = document.createElement('td');
-            unitCell.textContent = row.unit;
-            tr.appendChild(unitCell);
-
-            // Celda vacía para completar la tabla
-            const emptyCell = document.createElement('td');
-            emptyCell.textContent = '';
-            tr.appendChild(emptyCell);
-
-            tbody.appendChild(tr);
-        });
-
+    
+        // TODO: render `rows` into `resultsBody` as needed (your original logic not shown)
+    
         // Actualizar headers de dimensiones con valores reales
         this.actualizarHeadersDimensiones(params);
+    
+        // --- NUEVO: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRow = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('dimensionsBody');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRow.innerHTML = '';
+        tableBody.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyTh = document.createElement('th');
+        emptyTh.textContent = 'Df \\ B';
+        headerRow.appendChild(emptyTh);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRow.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        DF_data.forEach((df, i) => {
+            const row = document.createElement('tr');
+    
+            const dfCell = document.createElement('td');
+            dfCell.textContent = df;
+            dfCell.className = 'df-label';
+            row.appendChild(dfCell);
+    
+            B_data.forEach((_, j) => {
+                const cell = document.createElement('td');
+                cell.textContent = Qu[i]?.[j]?.toFixed(2) ?? '';
+                row.appendChild(cell);
+            });
+    
+            tableBody.appendChild(row);
+        });
     }
+
+    // mostrarResultados(result, params) {
+    //     // Obtener resultados
+    //     const {Qu, Qa, Nq, Nc, Ng, Fcs, Fqs, Fgs, Fcd, Fqd, Fgd, Fci, Fqi, Fgi, DF_data, B_data} = result.getResults()
+    //     console.log("QU",Qu, DF_data, B_data)
+    //     const qu = result.getQuResultados ? result.getQuResultados() : result.resultados_qu;
+    //     const qa = result.getQaResultados ? result.getQaResultados() : result.resultados_qa;
+        
+    //     console.log('Resultados obtenidos:', { qu, qa });
+
+    //     // Actualizar tabla de resultados
+    //     const tbody = document.getElementById('resultsBody');
+        
+    //     // Limpiar contenido previo
+    //     tbody.innerHTML = '';
+
+    //     // Obtener factores si están disponibles
+    //     let factores = {};
+    //     if (result.getNc) {
+    //         factores.nc = result.getNc();
+    //         factores.nq = result.getNq();
+    //         factores.ng = result.getNg();
+    //     }
+
+    //     // Crear filas de resultados
+    //     const rows = [
+    //         { label: 'Nc', values: factores.nc || [['-']], unit: '' },
+    //         { label: 'Nq', values: factores.nq || [['-']], unit: '' },
+    //         { label: 'NY', values: factores.ng || [['-']], unit: '' },
+    //         { label: 'Qu', values: qu, unit: this.getUnidadDisplay(params.unidades) },
+    //         { label: 'Qa', values: qa, unit: this.getUnidadDisplay(params.unidades) }
+    //     ];
+
+
+
+    //     // Actualizar headers de dimensiones con valores reales
+    //     this.actualizarHeadersDimensiones(params);
+    // }
 
     actualizarHeadersDimensiones(params) {
         const table = document.getElementById('dimensionsTable');
