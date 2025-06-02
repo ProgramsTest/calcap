@@ -1,66 +1,70 @@
+// Clase para calcular la capacidad portante admisible según el método de Meyerhof
 class QadmMeyerhof {
   constructor(
-    Datos,
-    B_min, B_max, dB,
-    L, // L is now a single fixed value
-    DF_min, DF_max, dF,
-    Nfreatico,
-    Beta = 0
+    Datos,            // Matriz con los datos de los estratos [profundidad, peso_esp, peso_sat, phi, cohesión]
+    B_min, B_max, dB, // Rango y paso para el ancho de la zapata
+    L,                // Largo de la zapata (valor fijo)
+    DF_min, DF_max, dF, // Rango y paso para profundidad de desplante
+    Nfreatico,        // Nivel freático
+    Beta = 0          // Ángulo de inclinación de la carga (grados)
   ) {
     this.Datos = Datos;
     this.Nfreatico = Nfreatico;
     this.Peso_agua = 1;
     this.Beta = Beta;
-  
+
     this.B_data = this.range(B_min, B_max, dB);
-    this.L_data = Array(this.B_data.length).fill(L); // L is fixed
+    this.L_data = Array(this.B_data.length).fill(L);
     this.DF_data = this.range(DF_min, DF_max, dF);
-  
+
     this.numB = this.B_data.length;
     this.numDF = this.DF_data.length;
-  
-    this.initOutputMatrices();
 
+    this.initOutputContainers();
     this.calculate();
   }
-  
+
+  // Genera un arreglo con los valores entre min y max con el paso dado
   range(min, max, step) {
     if (min === max) return [min];
     return Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, i) => min + i * step);
   }
-  
 
   degToRad(deg) {
     return deg * Math.PI / 180;
   }
 
-  initOutputMatrices() {
-    const shape = () => Array.from({ length: this.numDF }, () => Array(this.numB).fill(0));
+  // Inicializa contenedores para los diferentes tipos de salidas
+  initOutputContainers() {
+    const matrix = () => Array.from({ length: this.numDF }, () => Array(this.numB).fill(0));
+    const vector = () => Array(this.numB).fill(0);
 
-    this.Qu = shape();
-    this.Qa = shape();
+    this.matrix_B_Df = {
+      Qu: matrix(),
+      Qa: matrix(),
+      Fcd: matrix(),
+      Fqd: matrix(),
+      Fgd: matrix(),
+    };
 
-    this.Nq = shape();
-    this.Nc = shape();
-    this.Ng = shape();
+    this.vector_B = {
+      Fcs: vector(),
+      Fqs: vector(),
+      Fgs: vector(),
+    };
 
-    this.Fcs = shape();
-    this.Fqs = shape();
-    this.Fgs = shape();
-
-    this.Fcd = shape();
-    this.Fqd = shape();
-    this.Fgd = shape();
-
-    this.Fci = shape();
-    this.Fqi = shape();
-    this.Fgi = shape();
+    this.scalars = {
+      Nc: 0,
+      Nq: 0,
+      Ng: 0,
+      Fci: 0,
+      Fqi: 0,
+      Fgi: 0,
+    };
   }
 
   calculate() {
     const { Datos, Nfreatico, Peso_agua, B_data, L_data, DF_data } = this;
-    const numEstratos = Datos.length;
-
 
     for (let i = 0; i < this.numDF; i++) {
       const Df = DF_data[i];
@@ -69,27 +73,26 @@ class QadmMeyerhof {
         const B = B_data[j];
         const L = L_data[j];
 
-        let c, phi, Peso_especifico2, Peso_saturado2, Peso_sumergido2, ub;
-
-        for (let k = 0; k < numEstratos; k++) {
+        // Identificamos el estrato correspondiente según la profundidad Df
+        let c, phi, Peso_esp, Peso_sat, Peso_sum, ub;
+        for (let k = 0; k < Datos.length; k++) {
           const D0 = k === 0 ? 0 : Datos[k - 1][0];
           const D1 = Datos[k][0];
-
-          if (D1 > Df && D0 < Df) {
-            c = Datos[k][4];
+          if (D1 > Df && D0 <= Df) {
+            Peso_esp = Datos[k][1];
+            Peso_sat = Datos[k][2];
             phi = Datos[k][3];
-            Peso_especifico2 = Datos[k][1];
-            Peso_saturado2 = Datos[k][2];
-            Peso_sumergido2 = Peso_saturado2 - Peso_agua;
+            c = Datos[k][4];
+            Peso_sum = Peso_sat - Peso_agua;
             ub = k;
             break;
           }
         }
 
+        // Cálculo de q y γ efectivo según nivel freático
         let ganma, q = 0;
-
         if (Nfreatico <= Df) {
-          ganma = Peso_sumergido2;
+          ganma = Peso_sum;
           for (let l = 0; l <= ub; l++) {
             const ant = l === 0 ? 0 : Datos[l - 1][0];
             if (Datos[l][0] <= Nfreatico) {
@@ -103,12 +106,9 @@ class QadmMeyerhof {
           }
         } else {
           const d = Nfreatico - Df;
-          if (d <= B) {
-            const Peso_prima = Peso_sumergido2;
-            ganma = Peso_prima + (d / B) * (Peso_especifico2 - Peso_prima);
-          } else {
-            ganma = Peso_especifico2;
-          }
+          ganma = d <= B
+            ? Peso_sum + (d / B) * (Peso_esp - Peso_sum)
+            : Peso_esp;
           for (let m = 0; m <= ub; m++) {
             const ant = m === 0 ? 0 : Datos[m - 1][0];
             const altura = m === ub ? Df - ant : Datos[m][0] - ant;
@@ -116,17 +116,30 @@ class QadmMeyerhof {
           }
         }
 
+        // Cálculo de factores de carga
         const phiRad = this.degToRad(phi);
         const tanPhi = Math.tan(phiRad);
         const sinPhi = Math.sin(phiRad);
-        const Nq = Math.pow(Math.tan(Math.PI / 4 + phiRad / 2), 2) * Math.exp(Math.PI * tanPhi);
-        const Nc = (Nq - 1) / tanPhi;
-        const Ng = (Nq - 1) * Math.tan(1.4 * phiRad);
 
-        const Fcs = 1 + (B * Nq) / (L * Nc);
-        const Fqs = 1 + (B * tanPhi) / L;
-        const Fgs = 1 - 0.4 * B / L;
+        const Nq = phi === 0 ? 1 : Math.pow(Math.tan(Math.PI / 4 + phiRad / 2), 2) * Math.exp(Math.PI * tanPhi);
+        const Nc = phi === 0 ? 5.14 : (Nq - 1) / tanPhi;
+        const Ng = phi === 0 ? 0 : (Nq - 1) * Math.tan(1.4 * phiRad);
 
+        // Guardar escalares (solo una vez)
+        if (i === 0 && j === 0) {
+          this.scalars.Nq = Nq;
+          this.scalars.Nc = Nc;
+          this.scalars.Ng = Ng;
+        }
+
+        // Factores de forma (sólo una vez por B)
+        if (i === 0) {
+          this.vector_B.Fcs[j] = 1 + (B * Nq) / (L * Nc);
+          this.vector_B.Fqs[j] = 1 + (B * tanPhi) / L;
+          this.vector_B.Fgs[j] = 1 - 0.4 * B / L;
+        }
+
+        // Factores de profundidad
         let Fcd, Fqd;
         if (Df / B <= 1) {
           if (phi === 0) {
@@ -145,59 +158,46 @@ class QadmMeyerhof {
             Fcd = Fqd - (1 - Fqd) / (Nc * tanPhi);
           }
         }
-
         const Fgd = 1;
 
+        // Factores de inclinación (constantes)
         const Fci = Math.pow(1 - this.Beta / 90, 2);
         const Fqi = Fci;
-        const Fgi = 1 - this.Beta / phi;
+        const Fgi = phi === 0 ? 1 : 1 - this.Beta / phi;
 
-        const qu = c * Nc * Fcs * Fcd * Fci + q * Nq * Fqs * Fqd * Fqi + 0.5 * ganma * B * Ng * Fgs * Fgd * Fgi;
-        const qadm = qu / 3;
+        if (i === 0 && j === 0) {
+          this.scalars.Fci = Fci;
+          this.scalars.Fqi = Fqi;
+          this.scalars.Fgi = Fgi;
+        }
 
-        console.log(L)
+        // Cálculo de capacidad última y admisible
+        const qu = c * Nc * this.vector_B.Fcs[j] * Fcd * Fci
+          + q * Nq * this.vector_B.Fqs[j] * Fqd * Fqi
+          + 0.5 * ganma * B * Ng * this.vector_B.Fgs[j] * Fgd * Fgi;
 
-        // Store results
-        this.Qu[i][j] = qu;
-        this.Qa[i][j] = qadm;
+        const qa = qu / 3;
 
-        this.Nq[i][j] = Nq;
-        this.Nc[i][j] = Nc;
-        this.Ng[i][j] = Ng;
-
-        this.Fcs[i][j] = Fcs;
-        this.Fqs[i][j] = Fqs;
-        this.Fgs[i][j] = Fgs;
-
-        this.Fcd[i][j] = Fcd;
-        this.Fqd[i][j] = Fqd;
-        this.Fgd[i][j] = Fgd;
-
-        this.Fci[i][j] = Fci;
-        this.Fqi[i][j] = Fqi;
-        this.Fgi[i][j] = Fgi;
+        // Guardar resultados
+        this.matrix_B_Df.Qu[i][j] = qu;
+        this.matrix_B_Df.Qa[i][j] = qa;
+        this.matrix_B_Df.Fcd[i][j] = Fcd;
+        this.matrix_B_Df.Fqd[i][j] = Fqd;
+        this.matrix_B_Df.Fgd[i][j] = Fgd;
       }
     }
   }
 
+  // Devuelve los resultados organizados por tipo
   getResults() {
     return {
-      Qu: this.Qu,
-      Qa: this.Qa,
-      Nq: this.Nq,
-      Nc: this.Nc,
-      Ng: this.Ng,
-      Fcs: this.Fcs,
-      Fqs: this.Fqs,
-      Fgs: this.Fgs,
-      Fcd: this.Fcd,
-      Fqd: this.Fqd,
-      Fgd: this.Fgd,
-      Fci: this.Fci,
-      Fqi: this.Fqi,
-      Fgi: this.Fgi,
-      DF_data: this.DF_data,
-      B_data: this.B_data,
+      matrix_B_Df: this.matrix_B_Df,
+      vector_B: this.vector_B,
+      scalars: this.scalars,
+      metadata: {
+        DF_data: this.DF_data,
+        B_data: this.B_data,
+      }
     };
   }
 }
