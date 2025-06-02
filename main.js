@@ -188,12 +188,9 @@ class BearingCapacityCalculator {
         const { Fcs, Fqs, Fgs } = vector_B;
         const { DF_data, B_data } = metadata;
         
-        console.log("QU", matrix_B_Df.Qu, metadata.DF_data, metadata.B_data);
+        console.log("Nq", Nq,"Nc", Nc,"Ng", Ng,"Fci", Fci,"Fqi", Fqi,"Fgi", Fgi);
     
-        const qu = result.getQuResultados ? result.getQuResultados() : result.resultados_qu;
-        const qa = result.getQaResultados ? result.getQaResultados() : result.resultados_qa;
-    
-        console.log('Resultados obtenidos:', { qu, qa });
+
     
         // Actualizar tabla de resultados
         const tbody = document.getElementById('resultsBody');
