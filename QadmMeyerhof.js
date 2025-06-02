@@ -74,28 +74,30 @@ class QadmMeyerhof {
         const L = L_data[j];
 
         // Identificamos el estrato correspondiente según la profundidad Df
-        let c, phi, Peso_esp, Peso_sat, Peso_sum, ub;
+        let c, phi, Peso_esp, Peso_sat, Peso_sum;
+        let ub = Datos.length-1;
         for (let k = 0; k < Datos.length; k++) {
           const D0 = k === 0 ? 0 : Datos[k - 1][0];
           const D1 = Datos[k][0];
-          if (D1 > Df && D0 <= Df) {
-            Peso_esp = Datos[k][1];
-            Peso_sat = Datos[k][2];
-            phi = Datos[k][3];
-            c = Datos[k][4];
-            Peso_sum = Peso_sat - Peso_agua;
+          if (D1 >= Df && D0 <= Df) {
             ub = k;
             break;
           }
         }
+        Peso_esp = Datos[ub][1];
+        Peso_sat = Datos[ub][2];
+        Peso_sum = Peso_sat - Peso_agua;
+        phi = Datos[ub][3];
+        c = Datos[ub][4];
 
+        
         // Cálculo de q y γ efectivo según nivel freático
         let ganma, q = 0;
-        if (Nfreatico <= Df) {
+        if (Nfreatico <= Df) {      // Caso I
           ganma = Peso_sum;
           for (let l = 0; l <= ub; l++) {
             const ant = l === 0 ? 0 : Datos[l - 1][0];
-            if (Datos[l][0] <= Nfreatico) {
+            if (Datos[l][0] <= Nfreatico) { 
               q += (Datos[l][0] - ant) * Datos[l][1];
             } else {
               q += (Nfreatico - ant) * Datos[l][1] + (Datos[l][0] - Nfreatico) * (Datos[l][2] - Peso_agua);
@@ -104,11 +106,11 @@ class QadmMeyerhof {
           if (Datos[ub][0] < Df) {
             q += (Df - Datos[ub][0]) * (Datos[ub][2] - Peso_agua);
           }
-        } else {
+        } else {                
           const d = Nfreatico - Df;
           ganma = d <= B
-            ? Peso_sum + (d / B) * (Peso_esp - Peso_sum)
-            : Peso_esp;
+            ? Peso_sum + (d / B) * (Peso_esp - Peso_sum)      // Caso II 
+            : Peso_esp;                                       // Caso III
           for (let m = 0; m <= ub; m++) {
             const ant = m === 0 ? 0 : Datos[m - 1][0];
             const altura = m === ub ? Df - ant : Datos[m][0] - ant;
@@ -123,7 +125,9 @@ class QadmMeyerhof {
 
         const Nq = phi === 0 ? 1 : Math.pow(Math.tan(Math.PI / 4 + phiRad / 2), 2) * Math.exp(Math.PI * tanPhi);
         const Nc = phi === 0 ? 5.14 : (Nq - 1) / tanPhi;
-        const Ng = phi === 0 ? 0 : (Nq - 1) * Math.tan(1.4 * phiRad);
+        const Ng = phi === 0 ? 0 : 2*(Nq + 1) * Math.tan(phiRad);
+        // const Ng = phi === 0 ? 0 : (Nq - 1) * Math.tan(1.4 * phiRad);   //MATLAB
+
 
         // Guardar escalares (solo una vez)
         if (i === 0 && j === 0) {
@@ -151,19 +155,23 @@ class QadmMeyerhof {
           }
         } else {
           if (phi === 0) {
-            Fcd = 1 + 0.4 * Math.atan(Df / B);
+            // Fcd = 1 + 0.4 * Math.atan(Df / B);            // MATLAB
+            Fcd = 1 + 0.4 * Math.atan(B / Df);
             Fqd = 1;
           } else {
-            Fqd = 1 + 2 * tanPhi * Math.pow(1 - sinPhi, 2) * Math.atan(Df / B);
+            // Fqd = 1 + 2 * tanPhi * Math.pow(1 - sinPhi, 2) * Math.atan(Df / B);     // MATLAB
+            Fqd = 1 + 2 * tanPhi * Math.pow(1 - sinPhi, 2) * Math.atan(B / Df);
             Fcd = Fqd - (1 - Fqd) / (Nc * tanPhi);
           }
         }
         const Fgd = 1;
 
+
         // Factores de inclinación (constantes)
         const Fci = Math.pow(1 - this.Beta / 90, 2);
         const Fqi = Fci;
         const Fgi = phi === 0 ? 1 : 1 - this.Beta / phi;
+
 
         if (i === 0 && j === 0) {
           this.scalars.Fci = Fci;
@@ -172,9 +180,14 @@ class QadmMeyerhof {
         }
 
         // Cálculo de capacidad última y admisible
+        // const qu = c * Nc * this.vector_B.Fcs[j] * Fcd * Fci
+        //   + q * Nq * this.vector_B.Fqs[j] * Fqd * Fqi
+        //   + 0.5 * ganma * B * Ng * this.vector_B.Fgs[j] * Fgd * Fgi;    // MATLAB
+        
         const qu = c * Nc * this.vector_B.Fcs[j] * Fcd * Fci
           + q * Nq * this.vector_B.Fqs[j] * Fqd * Fqi
-          + 0.5 * ganma * B * Ng * this.vector_B.Fgs[j] * Fgd * Fgi;
+          + 0.5 * ganma * B * Ng * this.vector_B.Fgs[j] * Fgd * Fgi - q;
+
 
         const qa = qu / 3;
 

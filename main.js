@@ -62,7 +62,7 @@ class BearingCapacityCalculator {
             incrementoLB: 1,
             profundidadMenorDf: 1.5,
             incrementoDf: 0.5,
-            formulaEmplear: 'arpl2',
+            formulaEmplear: 'meyerhof',
             unidadesResultados: 'tn/m2'
         };
 
@@ -258,7 +258,294 @@ class BearingCapacityCalculator {
     
             tableBody.appendChild(row);
         });
-    }
+
+
+
+        // --- NUEVO2: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRow2 = document.getElementById('tableHeader2');
+        const tableBody2 = document.getElementById('dimensionsBody2');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRow2.innerHTML = '';
+        tableBody2.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyTh2 = document.createElement('th');
+        emptyTh2.textContent = 'Df \\ B';
+        headerRow2.appendChild(emptyTh2);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRow2.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        DF_data.forEach((df, i) => {
+            const row2 = document.createElement('tr');
+    
+            const dfCell2 = document.createElement('td');
+            dfCell2.textContent = df;
+            dfCell2.className = 'df-label';
+            row2.appendChild(dfCell2);
+    
+            B_data.forEach((_, j) => {
+                const cell = document.createElement('td');
+                cell.textContent = Qa[i]?.[j]?.toFixed(2) ?? '';
+                row2.appendChild(cell);
+            });
+    
+            tableBody2.appendChild(row2);
+        });
+
+
+
+
+
+        // --- NUEVOFcd: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRowFcd = document.getElementById('tableHeaderFcd');
+        const tableBodyFcd = document.getElementById('dimensionsBodyFcd');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRowFcd.innerHTML = '';
+        tableBodyFcd.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyThFcd = document.createElement('th');
+        emptyThFcd.textContent = 'Df \\ B';
+        headerRowFcd.appendChild(emptyThFcd);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRowFcd.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        DF_data.forEach((df, i) => {
+            const rowFcd = document.createElement('tr');
+    
+            const dfCellFcd = document.createElement('td');
+            dfCellFcd.textContent = df;
+            dfCellFcd.className = 'df-label';
+            rowFcd.appendChild(dfCellFcd);
+    
+            B_data.forEach((_, j) => {
+                const cell = document.createElement('td');
+                cell.textContent = Fcd[i]?.[j]?.toFixed(2) ?? '';
+                rowFcd.appendChild(cell);
+            });
+    
+            tableBodyFcd.appendChild(rowFcd);
+        });
+
+
+        // --- NUEVOFqd: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRowFqd = document.getElementById('tableHeaderFqd');
+        const tableBodyFqd = document.getElementById('dimensionsBodyFqd');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRowFqd.innerHTML = '';
+        tableBodyFqd.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyThFqd = document.createElement('th');
+        emptyThFqd.textContent = 'Df \\ B';
+        headerRowFqd.appendChild(emptyThFqd);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRowFqd.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        DF_data.forEach((df, i) => {
+            const rowFqd = document.createElement('tr');
+    
+            const dfCellFqd = document.createElement('td');
+            dfCellFqd.textContent = df;
+            dfCellFqd.className = 'df-label';
+            rowFqd.appendChild(dfCellFqd);
+    
+            B_data.forEach((_, j) => {
+                const cell = document.createElement('td');
+                cell.textContent = Fqd[i]?.[j]?.toFixed(2) ?? '';
+                rowFqd.appendChild(cell);
+            });
+    
+            tableBodyFqd.appendChild(rowFqd);
+        });
+
+
+
+
+        // --- NUEVOFgd: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRowFgd = document.getElementById('tableHeaderFgd');
+        const tableBodyFgd = document.getElementById('dimensionsBodyFgd');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRowFgd.innerHTML = '';
+        tableBodyFgd.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyThFgd = document.createElement('th');
+        emptyThFgd.textContent = 'Df \\ B';
+        headerRowFgd.appendChild(emptyThFgd);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRowFgd.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        DF_data.forEach((df, i) => {
+            const rowFgd = document.createElement('tr');
+    
+            const dfCellFgd = document.createElement('td');
+            dfCellFgd.textContent = df;
+            dfCellFgd.className = 'df-label';
+            rowFgd.appendChild(dfCellFgd);
+    
+            B_data.forEach((_, j) => {
+                const cell = document.createElement('td');
+                cell.textContent = Fgd[i]?.[j]?.toFixed(2) ?? '';
+                rowFgd.appendChild(cell);
+            });
+    
+            tableBodyFgd.appendChild(rowFgd);
+        });
+
+
+
+
+        // --- NUEVOFcs: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRowFcs = document.getElementById('tableHeaderFcs');
+        const tableBodyFcs = document.getElementById('dimensionsBodyFcs');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRowFcs.innerHTML = '';
+        tableBodyFcs.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyThFcs = document.createElement('th');
+        emptyThFcs.textContent = '';
+        headerRowFcs.appendChild(emptyThFcs);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRowFcs.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        // DF_data.forEach((df, i) => {
+        const rowFcs = document.createElement('tr');
+
+        const dfCellFcs = document.createElement('td');
+        dfCellFcs.textContent = 'Fcs';
+        dfCellFcs.className = 'df-label';
+        rowFcs.appendChild(dfCellFcs);
+
+        B_data.forEach((_, j) => {
+            const cell = document.createElement('td');
+            cell.textContent = Fcs[j]?.toFixed(2) ?? '';
+            rowFcs.appendChild(cell);
+        });
+
+        tableBodyFcs.appendChild(rowFcs);
+    // });
+
+
+
+        // --- NUEVOFcs: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRowFqs = document.getElementById('tableHeaderFqs');
+        const tableBodyFqs = document.getElementById('dimensionsBodyFqs');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRowFqs.innerHTML = '';
+        tableBodyFqs.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyThFqs = document.createElement('th');
+        emptyThFqs.textContent = '';
+        headerRowFqs.appendChild(emptyThFqs);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRowFqs.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        // DF_data.forEach((df, i) => {
+        const rowFqs = document.createElement('tr');
+
+        const dfCellFqs = document.createElement('td');
+        dfCellFqs.textContent = 'Fqs';
+        dfCellFqs.className = 'df-label';
+        rowFqs.appendChild(dfCellFqs);
+
+        B_data.forEach((_, j) => {
+            const cell = document.createElement('td');
+            cell.textContent = Fqs[j]?.toFixed(2) ?? '';
+            rowFqs.appendChild(cell);
+        });
+
+        tableBodyFqs.appendChild(rowFqs);
+    // });
+
+
+
+
+
+        // --- NUEVOFcs: Actualizar la tabla de dimensiones con Qu, DF_data y B_data ---
+    
+        const headerRowFgs = document.getElementById('tableHeaderFgs');
+        const tableBodyFgs = document.getElementById('dimensionsBodyFgs');
+    
+        // Limpiar cabecera y cuerpo previos
+        headerRowFgs.innerHTML = '';
+        tableBodyFgs.innerHTML = '';
+    
+        // Crear cabecera
+        const emptyThFgs = document.createElement('th');
+        emptyThFgs.textContent = '';
+        headerRowFgs.appendChild(emptyThFgs);
+    
+        B_data.forEach(b => {
+            const th = document.createElement('th');
+            th.textContent = b;
+            headerRowFgs.appendChild(th);
+        });
+    
+        // Crear filas del cuerpo
+        // DF_data.forEach((df, i) => {
+        const rowFgs = document.createElement('tr');
+
+        const dfCellFgs = document.createElement('td');
+        dfCellFgs.textContent = 'Fgs';
+        dfCellFgs.className = 'df-label';
+        rowFgs.appendChild(dfCellFgs);
+
+        B_data.forEach((_, j) => {
+            const cell = document.createElement('td');
+            cell.textContent = Fgs[j]?.toFixed(2) ?? '';
+            rowFgs.appendChild(cell);
+        });
+
+        tableBodyFgs.appendChild(rowFgs);
+    // });
+
+
+}
 
     // mostrarResultados(result, params) {
     //     // Obtener resultados
