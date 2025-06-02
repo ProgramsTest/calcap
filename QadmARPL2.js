@@ -1,135 +1,168 @@
-// Clase para calcular la capacidad portante admisible según el método ARPL2
 class QadmARPL2 {
-  constructor(
-    Datos_Estratos,     // Matriz con datos de estratos [profundidad, peso_esp, peso_sat, phi, cohesión]
-    B_min, B_max, dB,    // Rango y paso para el ancho de la zapata
-    L,                   // Largo de la zapata (valor fijo)
-    DF_min, DF_max, dF,  // Rango y paso para profundidad de desplante
-    Nfreatico,           // Nivel freático
-    Beta = 0             // Ángulo de inclinación de la carga (grados)
-  ) {
-    // Almacenamos datos iniciales
-    this._Datos_Estratos = Datos_Estratos;
-    this.Beta = Beta;
-    this.Nfreatico = Nfreatico;
-    this.Peso_agua = 1;
-
-    // Construcción de vectores B y DF
-    this.B_data = this._buildArray(B_min, B_max, dB);
+  constructor(Datos, B_min, B_max, dB, L, DF_min, DF_max, dF, Nfreatico, Beta = 0) {
+    this.Datos = Datos;
+    this.B_data = this.linspace(B_min, B_max, dB);
+    this.DF_data = this.linspace(DF_min, DF_max, dF);
     this.L = L;
-    this.DF_data = DF_min === DF_max ? [DF_min] : this._buildArray(DF_min, DF_max, dF);
+    this.Nfreatico = Nfreatico;
+    this.Beta = Beta;
 
-    // Inicialización de contenedores de resultados
-    const rows = this.DF_data.length;
-    const cols = this.B_data.length;
-    const initMat = () => Array.from({ length: rows }, () => Array(cols).fill(0));
-
+    // Inicializar estructuras de resultados
     this.matrix_B_Df = {
-      Qu: initMat(),
-      Qa: initMat(),
-      Fcd: initMat(),
-      Fqd: initMat(),
-      Fgd: initMat()
+      Qu: [],
+      Qa: [],
+      Fcd: [],
+      Fqd: [],
+      Fgd: []
     };
-
     this.vector_B = {
-      Fcs: Array(cols).fill(0),
-      Fqs: Array(cols).fill(0),
-      Fgs: Array(cols).fill(0)
+      Fcs: [],
+      Fqs: [],
+      Fgs: []
     };
-
     this.scalars = {
-      Nq: 0, Nc: 0, Ng: 0,
-      Fci: 0, Fqi: 0, Fgi: 0
+      Fci: 0,
+      Fqi: 0,
+      Fgi: 0,
+      Nq: 0,
+      Nc: 0,
+      Ng: 0
     };
 
-    // Cálculo principal
-    this._computeBearingCapacity();
+    this.run();
   }
 
-  // Genera arreglo de min a max con paso
-  _buildArray(min, max, step) {
-    const arr = [];
-    for (let v = min; v <= max + 1e-9; v += step) arr.push(+v.toFixed(10));
-    return arr;
-  }
-
-  _tand(deg) { return Math.tan(deg * Math.PI / 180); }
-  _sind(deg) { return Math.sin(deg * Math.PI / 180); }
-  _exp(x)    { return Math.exp(x); }
-
-  // Lógica de cálculo análoga a QadmARPL pero con separación de salidas
-  _computeBearingCapacity() {
-    const cols = this.B_data.length;
-    const rows = this.DF_data.length;
-    const Datos = this._Datos_Estratos;
-
-    // Vector_B: factores de forma independientes de Df (usamos primer estrato)
-    const [ , , , phi0 ] = Datos[0];
-    const phiRad0 = phi0 * Math.PI / 180;
-    for (let j = 0; j < cols; j++) {
-      const B = this.B_data[j];
-      // Shape factors
-      const Nq0 = phi0 === 0 ? 1 : Math.pow(this._tand(45 + phi0/2),2) * this._exp(Math.PI*this._tand(phi0));
-      const Nc0 = phi0 === 0 ? 5.14 : (Nq0 - 1)/this._tand(phi0);
-      this.vector_B.Fcs[j] = 1 + (B * Nq0)/(this.L * Nc0);
-      this.vector_B.Fqs[j] = 1 + (B * this._tand(phi0))/this.L;
-      this.vector_B.Fgs[j] = 1 - 0.4 * B / this.L;
+  linspace(min, max, step) {
+    const result = [];
+    for (let val = min; val <= max + 1e-6; val += step) {
+      result.push(parseFloat(val.toFixed(6)));
     }
+    return result;
+  }
 
-    // Barrido sobre Df y B para matrices
-    for (let i = 0; i < rows; i++) {
-      const Df = this.DF_data[i];
-      for (let j = 0; j < cols; j++) {
-        const B = this.B_data[j];
-        const L = this.L;
+  run() {
+    const Datos = this.Datos;
+    const DF = this.DF_data;
+    const B_data = this.B_data;
+    const L = this.L;
+    const Nfreatico = this.Nfreatico;
+    const Beta = this.Beta;
+    const Peso_agua = 1;
 
-        // Propiedades del estrato activo (homogéneo: primer estrato)
-        const [ , gamma, gamma_sat, phi, c ] = Datos[0];
-        const gamma_sub = gamma_sat - this.Peso_agua;
+    const Num_1 = DF.length;
+    const Num_2 = B_data.length;
+    const Num_Estratos = Datos.length;
 
-        // q y gamma efectivo
-        let q = Df * gamma;
-        let gamma_eff = this.Nfreatico <= Df ? gamma_sub : gamma;
+    for (let i = 0; i < Num_1; i++) {
+      const Df = DF[i];
+      this.matrix_B_Df.Qu[i] = [];
+      this.matrix_B_Df.Qa[i] = [];
+      this.matrix_B_Df.Fcd[i] = [];
+      this.matrix_B_Df.Fqd[i] = [];
+      this.matrix_B_Df.Fgd[i] = [];
 
-        // Bearing capacity factors (escalars)
-        const phiRad = phi * Math.PI / 180;
-        const tanPhi = this._tand(phi);
-        const sinPhi = this._sind(phi);
-        const Nq = phi === 0 ? 1 : Math.pow(Math.tan(Math.PI/4 + phiRad/2),2) * this._exp(Math.PI*tanPhi);
-        const Nc = phi === 0 ? 5.14 : (Nq - 1)/tanPhi;
-        const Ng = phi === 0 ? 0 : (Nq - 1)*this._tand(1.4*phi);
+      for (let j = 0; j < Num_2; j++) {
+        const B = B_data[j];
+        const Lval = L;
 
-        if (i===0 && j===0) {
-          Object.assign(this.scalars, { Nq, Nc, Ng });
-          this.scalars.Fci = Math.pow(1 - this.Beta/90,2);
-          this.scalars.Fqi = this.scalars.Fci;
-          this.scalars.Fgi = phi===0?1:1 - this.Beta/phi;
+        // Identificar estrato en el que se encuentra la base de zapata
+        let c, phi, Peso_especifico2, Peso_saturado2, Peso_sumergido2, ub;
+        for (let k = 0; k < Num_Estratos; k++) {
+          const D0 = k === 0 ? 0 : Datos[k - 1][0];
+          const D1 = Datos[k][0];
+          if (D1 > Df && D0 <= Df) {
+            c = Datos[k][4];
+            phi = Datos[k][3];
+            Peso_especifico2 = Datos[k][1];
+            Peso_saturado2 = Datos[k][2];
+            Peso_sumergido2 = Peso_saturado2 - Peso_agua;
+            ub = k + 1;
+            break;
+          }
         }
 
-        // Depth factors
-        const ratio = Df/B;
-        const base = ratio <= 1? ratio: Math.atan(ratio);
-        const Fqd = phi===0?1:1 + 2 * this._tand(phi)*Math.pow(1-sinPhi,2)*base;
-        const Fcd = phi===0? 1 + 0.4*base : Fqd - (1-Fqd)/(Nc*tanPhi);
-        const Fgd = 1;
+        let ganma, q = 0;
+        if (Nfreatico <= Df) {
+          ganma = Peso_sumergido2;
+          for (let l = 0; l < ub; l++) {
+            const ant = l === 0 ? 0 : Datos[l - 1][0];
+            if (Datos[l][0] <= Nfreatico) {
+              q += (Datos[l][0] - ant) * Datos[l][1];
+            } else {
+              if (l === ub - 1) {
+                if (Datos[l - 1][0] > Nfreatico) {
+                  q += (Df - ant) * (Datos[l][2] - Peso_agua);
+                } else {
+                  q += (Nfreatico - ant) * Datos[l][1] + (Df - Nfreatico) * (Datos[l][2] - Peso_agua);
+                }
+              } else {
+                q += (Nfreatico - ant) * Datos[l][1] + (Datos[l][0] - Nfreatico) * (Datos[l][2] - Peso_agua);
+              }
+            }
+          }
+        } else {
+          const d = Nfreatico - Df;
+          if (d <= B) {
+            const Peso_prima = Peso_sumergido2;
+            ganma = Peso_prima + (d / B) * (Peso_especifico2 - Peso_prima);
+          } else {
+            ganma = Peso_especifico2;
+          }
+          for (let m = 0; m < ub; m++) {
+            const ant = m === 0 ? 0 : Datos[m - 1][0];
+            const altura = m === ub - 1 ? Df - ant : Datos[m][0] - ant;
+            q += altura * Datos[m][1];
+          }
+        }
 
-        // Recuperar shape factors y scalars
-        const { Fcs, Fqs, Fgs } = this.vector_B;
-        const { Fci, Fqi, Fgi } = this.scalars;
+        // Factores de carga
+        let Nc, Nq, Ng;
+        if (phi === 0) {
+          Nq = 1;
+          Nc = 5.14;
+          Ng = 0;
+        } else {
+          Nq = (Math.tan((Math.PI / 180) * (45 + phi / 2))) ** 2 * Math.exp(Math.PI * Math.tan((Math.PI / 180) * phi));
+          Nc = (Nq - 1) / Math.tan((Math.PI / 180) * phi);
+          Ng = (Nq - 1) * Math.tan((Math.PI / 180) * (1.4 * phi));
+        }
 
-        // Cálculo Qu y Qa
-        const qu = c * Nc * Fcs[j] * Fcd * Fci
-                 + q * Nq * Fqs[j] * Fqd * Fqi
-                 + 0.5 * gamma_eff * B * Ng * Fgs[j] * Fgd * Fgi;
-        const qa = qu/3;
+        // Factores de forma
+        const Kp = Math.tan((Math.PI / 180) * (phi / 2 + 45)) ** 2;
+        const Fcs = phi === 0 ? 1 + 0.2 * B / Lval : 1 + 0.2 * Kp * B / Lval;
+        const Fqs = phi === 0 ? 1 : 1 + 0.1 * Kp * B / Lval;
+        const Fgs = phi === 0 ? 1 : 1 + 0.1 * Kp * B / Lval;
 
-        // Asignar a matrices
-        this.matrix_B_Df.Qu[i][j]  = qu;
-        this.matrix_B_Df.Qa[i][j]  = qa;
-        this.matrix_B_Df.Fcd[i][j]= Fcd;
-        this.matrix_B_Df.Fqd[i][j]= Fqd;
-        this.matrix_B_Df.Fgd[i][j]= Fgd;
+        // Factores de profundidad
+        const Kp05 = Math.sqrt(Kp);
+        const Fcd = 1 + (phi > 10 ? 0.2 * Kp05 * Df / B : 0.2 * Kp05 * Df / B);
+        const Fqd = phi > 10 ? 1 + 0.1 * Kp05 * Df / B : 1;
+        const Fgd = phi > 10 ? 1 + 0.1 * Kp05 * Df / B : 1;
+
+        // Factores de inclinación
+        const Fci = phi === 0 && Beta === 0 ? 1 : (1 - Beta / 90) ** 2;
+        const Fqi = Fci;
+        const Fgi = phi === 0 ? 1 : (1 - Beta / phi) ** 2;
+
+        const qu = c * Nc * Fcs * Fcd * Fci + q * Nq * Fqs * Fqd * Fqi + 0.5 * ganma * B * Ng * Fgs * Fgd * Fgi;
+        const qa = qu / 3;
+
+        // Almacenar resultados
+        this.matrix_B_Df.Qu[i][j] = qu;
+        this.matrix_B_Df.Qa[i][j] = qa;
+        this.matrix_B_Df.Fcd[i][j] = Fcd;
+        this.matrix_B_Df.Fqd[i][j] = Fqd;
+        this.matrix_B_Df.Fgd[i][j] = Fgd;
+
+        if (i === 0) {
+          this.vector_B.Fcs[j] = Fcs;
+          this.vector_B.Fqs[j] = Fqs;
+          this.vector_B.Fgs[j] = Fgs;
+        }
+
+        if (i === 0 && j === 0) {
+          this.scalars = { Fci, Fqi, Fgi, Nq, Nc, Ng };
+        }
       }
     }
   }

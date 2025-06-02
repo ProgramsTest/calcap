@@ -1,136 +1,118 @@
-// Clase para calcular la capacidad portante admisible según el método ARPL
+// QadmARPL.js
+
 class QadmARPL {
-  constructor(
-    Datos_Estratos,     // Matriz con datos de estratos [profundidad, peso_esp, peso_sat, phi, cohesión]
-    B_min, B_max, dB,    // Rango y paso para el ancho de la zapata
-    L,                   // Largo de la zapata (valor fijo)
-    DF_min, DF_max, dF,  // Rango y paso para profundidad de desplante
-    Nfreatico,           // Nivel freático
-    Beta = 0             // Ángulo de inclinación de la carga (grados)
-  ) {
-    // Almacenar datos de entrada
-    this._Datos_Estratos = Datos_Estratos;
-    this.B_data = this._buildArray(B_min, B_max, dB);
+  constructor(Datos, B_min, B_max, dB, L, DF_min, DF_max, dF, Nfreatico, Beta = 0) {
+    this.Datos = Datos;
     this.L = L;
-    this.DF_data = this._buildArray(DF_min, DF_max, dF);
     this.Nfreatico = Nfreatico;
     this.Beta = Beta;
 
-    // Inicializar contenedores de salida
+    this.B_data = this.range(B_min, B_max, dB);
+    this.DF_data = this.range(DF_min, DF_max, dF);
+
+    const numDf = this.DF_data.length;
+    const numB = this.B_data.length;
+
+    const initMatrix = () => Array.from({ length: numDf }, () => Array(numB).fill(0));
     this.matrix_B_Df = {
-      Qu: this._initMatrix(this.DF_data.length, this.B_data.length),
-      Qa: this._initMatrix(this.DF_data.length, this.B_data.length),
-      Fcd: this._initMatrix(this.DF_data.length, this.B_data.length),
-      Fqd: this._initMatrix(this.DF_data.length, this.B_data.length),
-      Fgd: this._initMatrix(this.DF_data.length, this.B_data.length)
+      Qu: initMatrix(),
+      Qa: initMatrix(),
+      Fcd: initMatrix(),
+      Fqd: initMatrix(),
+      Fgd: initMatrix()
     };
-
     this.vector_B = {
-      Fcs: Array(this.B_data.length).fill(0),
-      Fqs: Array(this.B_data.length).fill(0),
-      Fgs: Array(this.B_data.length).fill(0)
+      Fcs: Array(numB).fill(0),
+      Fqs: Array(numB).fill(0),
+      Fgs: Array(numB).fill(0)
     };
+    this.scalars = {};
 
-    this.scalars = {
-      Nc: 0, Nq: 0, Ng: 0,
-      Fci: 0, Fqi: 0, Fgi: 0
-    };
-
-    this._procesaCap();
+    this.run();
   }
 
-  // Genera arreglo de min a max con paso
-  _buildArray(min, max, step) {
-    if (min === max) return [min];
-    const arr = [];
-    for (let v = min; v <= max + 1e-9; v += step) arr.push(+v.toFixed(10));
-    return arr;
-  }
+  run() {
+    const gammaAgua = 1;
 
-  _initMatrix(rows, cols) {
-    return Array.from({ length: rows }, () => Array(cols).fill(0));
-  }
-
-  _tand(deg) { return Math.tan(deg * Math.PI / 180); }
-  _sind(deg) { return Math.sin(deg * Math.PI / 180); }
-  _exp(x)    { return Math.exp(x); }
-
-  // Lógica de cálculo principal
-  _procesaCap() {
-    const cols = this.B_data.length;
-    const rows = this.DF_data.length;
-    const Peso_agua = 1;
-    const Datos = this._Datos_Estratos;
-
-    for (let j = 0; j < cols; j++) {
-      // Calculamos factores independientes de Df (vector_B)
-      const B = this.B_data[j];
-      const phi_dummy = Datos[0][3]; // si homogéneo, usar primer estrato
-      const phiRad = phi_dummy * Math.PI / 180;
-      this.vector_B.Fcs[j] = 1 + (B * Math.pow(Math.tan(Math.PI/4 + phiRad/2),2) * this._exp(Math.PI*this._tand(phi_dummy))) /
-                            (this.L * ((Math.pow(Math.tan(Math.PI/4 + phiRad/2),2)*this._exp(Math.PI*this._tand(phi_dummy))-1)/this._tand(phi_dummy)));
-      this.vector_B.Fqs[j] = 1 + (B * this._tand(phi_dummy)) / this.L;
-      this.vector_B.Fgs[j] = 1 - 0.4 * B / this.L;
-    }
-
-    for (let i = 0; i < rows; i++) {
+    for (let i = 0; i < this.DF_data.length; i++) {
       const Df = this.DF_data[i];
-      for (let j = 0; j < cols; j++) {
+      for (let j = 0; j < this.B_data.length; j++) {
         const B = this.B_data[j];
+        const L = this.L;
 
-        // Selección de propiedades del primer estrato (homogéneo)
-        const [ , peso_esp, peso_sat, phi, c ] = Datos[0];
-        const peso_sum = peso_sat - Peso_agua;
+        const { phi, c, Peso_especifico, Peso_saturado, ub } = this.getSoilLayer(Df);
+        const Peso_sumergido = Peso_saturado - gammaAgua;
 
-        // q y gamma
-        let gamma_eff = (this.Nfreatico <= Df ? peso_sum : peso_esp);
-        let q = Df * peso_esp;
+        const ganma = this.calcGamma(Df, B, Peso_especifico, Peso_sumergido);
+        const q = this.calcQ(Df, Peso_especifico, Peso_saturado, gammaAgua, ub);
 
-        // Factores de capacidad (escalars)
-        const phiRad = phi * Math.PI / 180;
-        const tanPhi = Math.tan(phiRad);
-        const sinPhi = Math.sin(phiRad);
-        const Nq = phi === 0 ? 1 : Math.pow(Math.tan(Math.PI/4 + phiRad/2),2) * this._exp(Math.PI*tanPhi);
-        const Nc = phi === 0 ? 5.14 : (Nq - 1) / tanPhi;
-        const Ng = phi === 0 ? 0 : (Nq - 1) * this._tand(1.4 * phi);
-
-        // Guardar escalares sólo al primer caso
-        if (i === 0 && j === 0) {
-          Object.assign(this.scalars, { Nq, Nc, Ng });
-          this.scalars.Fci = Math.pow(1 - this.Beta/90,2);
-          this.scalars.Fqi = this.scalars.Fci;
-          this.scalars.Fgi = phi === 0 ? 1 : 1 - this.Beta/phi;
+        let Nq, Nc, Ng;
+        if (phi === 0) {
+          Nq = 1;
+          Nc = 5.14;
+          Ng = 0;
+        } else {
+          const phiRad = this.degToRad(phi);
+          Nq = Math.pow(Math.tan(Math.PI / 4 + phiRad / 2), 2) * Math.exp(Math.PI * Math.tan(phiRad));
+          Nc = (Nq - 1) / Math.tan(phiRad);
+          Ng = 2 * (Nq + 1) * Math.tan(phiRad);
         }
 
-        // Factores de profundidad
-        const ratio = Df / B;
-        const base = ratio <= 1 ? ratio : Math.atan(ratio);
-        const Fqd = phi === 0 ? 1 : 1 + 2 * this._tand(phi) * Math.pow(1 - sinPhi,2) * base;
-        const Fcd = phi === 0 ? 1 + 0.4 * base : Fqd - (1 - Fqd) / (Nc * tanPhi);
-        const Fgd = 1;
+        const Fcs = 1 + (B * Nq) / (L * Nc);
+        const Fqs = 1 + (B * Math.tan(this.degToRad(phi))) / L;
+        const Fgs = 1 - 0.4 * (B / L);
+        this.vector_B.Fcs[j] = Fcs;
+        this.vector_B.Fqs[j] = Fqs;
+        this.vector_B.Fgs[j] = Fgs;
 
-        // Cálculo de Qu y Qa
-        const Fcs = this.vector_B.Fcs[j];
-        const Fqs = this.vector_B.Fqs[j];
-        const Fgs = this.vector_B.Fgs[j];
+        let Fcd, Fqd, Fgd;
+        if (Df / B <= 1) {
+          if (phi === 0) {
+            Fcd = 1 + 0.4 * Df / B;
+            Fqd = 1;
+            Fgd = 1;
+          } else {
+            const phiRad = this.degToRad(phi);
+            Fqd = 1 + 2 * Math.tan(phiRad) * Math.pow(1 - Math.sin(phiRad), 2) * (Df / B);
+            Fcd = Fqd - (1 - Fqd) / (Nc * Math.tan(phiRad));
+            Fgd = 1;
+          }
+        } else {
+          if (phi === 0) {
+            Fcd = 1 + 0.4 * Math.atan(Df / B);
+            Fqd = 1;
+            Fgd = 1;
+          } else {
+            const phiRad = this.degToRad(phi);
+            Fqd = 1 + 2 * Math.tan(phiRad) * Math.pow(1 - Math.sin(phiRad), 2) * Math.atan(Df / B);
+            Fcd = Fqd - (1 - Fqd) / (Nc * Math.tan(phiRad));
+            Fgd = 1;
+          }
+        }
+
+        if (i === 0 && j === 0) {
+          let Fci = 1, Fqi = 1, Fgi = 1;
+          if (phi !== 0 || this.Beta !== 0) {
+            Fci = Math.pow(1 - this.Beta / 90, 2);
+            Fqi = Fci;
+            Fgi = 1 - this.Beta / phi;
+          }
+          this.scalars = { Fci, Fqi, Fgi, Nc, Nq, Ng };
+        }
+
         const { Fci, Fqi, Fgi } = this.scalars;
-
-        const qu = c * Nc * Fcs * Fcd * Fci
-                 + q * Nq * Fqs * Fqd * Fqi
-                 + 0.5 * gamma_eff * B * Ng * Fgs * Fgd * Fgi;
+        const qu = c * Nc * Fcs * Fcd * Fci + q * Nq * Fqs * Fqd * Fqi + 0.5 * ganma * B * Ng * Fgs * Fgd * Fgi;
         const qa = qu / 3;
 
-        // Asignar a matrix_B_Df
-        this.matrix_B_Df.Qu[i][j]  = qu;
-        this.matrix_B_Df.Qa[i][j]  = qa;
-        this.matrix_B_Df.Fcd[i][j]= Fcd;
-        this.matrix_B_Df.Fqd[i][j]= Fqd;
-        this.matrix_B_Df.Fgd[i][j]= Fgd;
+        this.matrix_B_Df.Qu[i][j] = qu;
+        this.matrix_B_Df.Qa[i][j] = qa;
+        this.matrix_B_Df.Fcd[i][j] = Fcd;
+        this.matrix_B_Df.Fqd[i][j] = Fqd;
+        this.matrix_B_Df.Fgd[i][j] = Fgd;
       }
     }
   }
 
-  // Devuelve resultados con la estructura solicitada
   getResults() {
     return {
       matrix_B_Df: this.matrix_B_Df,
@@ -138,9 +120,88 @@ class QadmARPL {
       scalars: this.scalars,
       metadata: {
         DF_data: this.DF_data,
-        B_data: this.B_data,
+        B_data: this.B_data
       }
     };
+  }
+
+  range(min, max, step) {
+    const result = [];
+    for (let v = min; v <= max + 1e-6; v += step) {
+      result.push(parseFloat(v.toFixed(10)));
+    }
+    return result;
+  }
+
+  degToRad(deg) {
+    return (deg * Math.PI) / 180;
+  }
+
+  getSoilLayer(Df) {
+    const datos = this.Datos;
+    let D0 = 0;
+    for (let k = 0; k < datos.length; k++) {
+      const D1 = datos[k][0];
+      if (D1 > Df && D0 <= Df) {
+        return {
+          phi: datos[k][3],
+          c: datos[k][4],
+          Peso_especifico: datos[k][1],
+          Peso_saturado: datos[k][2],
+          ub: k + 1
+        };
+      }
+      D0 = D1;
+    }
+    const k = datos.length - 1;
+    return {
+      phi: datos[k][3],
+      c: datos[k][4],
+      Peso_especifico: datos[k][1],
+      Peso_saturado: datos[k][2],
+      ub: datos.length
+    };
+  }
+
+  calcQ(Df, Peso_esp, Peso_sat, gammaAgua, ub) {
+    const datos = this.Datos;
+    const Nf = this.Nfreatico;
+    let q = 0;
+
+    for (let l = 0; l < ub; l++) {
+      const ant = l === 0 ? 0 : datos[l - 1][0];
+      const h = Math.min(Df, datos[l][0]) - ant;
+
+      if (Nf <= Df) {
+        if (datos[l][0] <= Nf) {
+          q += h * datos[l][1];
+        } else if (l === ub - 1) {
+          if (datos[l - 1][0] > Nf) {
+            q += (Df - ant) * (datos[l][2] - gammaAgua);
+          } else {
+            q += (Nf - ant) * datos[l][1] + (Df - Nf) * (datos[l][2] - gammaAgua);
+          }
+        } else {
+          q += (Nf - ant) * datos[l][1] + (datos[l][0] - Nf) * (datos[l][2] - gammaAgua);
+        }
+      } else {
+        q += h * datos[l][1];
+      }
+    }
+
+    return q;
+  }
+
+  calcGamma(Df, B, Peso_esp, Peso_sumergido) {
+    const Nf = this.Nfreatico;
+    const d = Nf - Df;
+    if (Nf <= Df) {
+      return Peso_sumergido;
+    } else if (d <= B) {
+      return Peso_sumergido + (d / B) * (Peso_esp - Peso_sumergido);
+    } else {
+      return Peso_esp;
+    }
   }
 }
 
