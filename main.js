@@ -209,8 +209,8 @@ class BearingCapacityCalculator {
             { label: 'Nc', values: factores.nc || [['-']], unit: '' },
             { label: 'Nq', values: factores.nq || [['-']], unit: '' },
             { label: 'NY', values: factores.ng || [['-']], unit: '' },
-            { label: 'Qu', values: qu, unit: this.getUnidadDisplay(params.unidades) },
-            { label: 'Qa', values: qa, unit: this.getUnidadDisplay(params.unidades) }
+            { label: 'Qu', values: Qu, unit: this.getUnidadDisplay(params.unidades) },
+            { label: 'Qa', values: Qa, unit: this.getUnidadDisplay(params.unidades) }
         ];
     
         // TODO: render `rows` into `resultsBody` as needed (your original logic not shown)
