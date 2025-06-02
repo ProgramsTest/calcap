@@ -180,8 +180,15 @@ class BearingCapacityCalculator {
 
     mostrarResultados(result, params) {
         // Obtener resultados
-        const {Qu, Qa, Nq, Nc, Ng, Fcs, Fqs, Fgs, Fcd, Fqd, Fgd, Fci, Fqi, Fgi, DF_data, B_data} = result.getResults();
-        console.log("QU", Qu, DF_data, B_data);
+        const {matrix_B_Df, vector_B, scalars, metadata} = result.getResults();
+        // , Fcs, Fqs, Fgs, DF_data, B_data}
+        
+        const { Qu, Qa, Fcd, Fqd, Fgd } = matrix_B_Df;
+        const { Nq, Nc, Ng, Fci, Fqi, Fgi } = scalars;
+        const { Fcs, Fqs, Fgs } = vector_B;
+        const { DF_data, B_data } = metadata;
+        
+        console.log("QU", matrix_B_Df.Qu, metadata.DF_data, metadata.B_data);
     
         const qu = result.getQuResultados ? result.getQuResultados() : result.resultados_qu;
         const qa = result.getQaResultados ? result.getQaResultados() : result.resultados_qa;
